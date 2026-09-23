@@ -9,166 +9,241 @@
  * emitter thinks it emitted.
  *
  * Usage:
- *   node scripts/paste-test.mjs                 # every animation, JS tab
- *   node scripts/paste-test.mjs --tab jsGsap    # the GSAP tab instead
+ *   node scripts/paste-test.mjs                 # every animation, both tabs
+ *   node scripts/paste-test.mjs --tab jsGsap    # only the GSAP tab
+ *   node scripts/paste-test.mjs --tab js        # only the zero-dependency tab
  *   node scripts/paste-test.mjs --only line-draw
  *   node scripts/paste-test.mjs --keep          # leave the pasted files behind
  */
-import { mkdir, rm, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { chromium } from 'playwright'
-import { createServer } from 'vite'
-import { readCatalog } from './lib/catalog.mjs'
+import { mkdir, rm, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { chromium } from "playwright";
+import { createServer } from "vite";
+import { readCatalog } from "./lib/catalog.mjs";
 
-const root = dirname(dirname(fileURLToPath(import.meta.url)))
-const animationsDir = join(root, 'src/animations')
-const outDir = join(root, '.capture/paste')
+const root = dirname(dirname(fileURLToPath(import.meta.url)));
+const animationsDir = join(root, "src/animations");
+const outDir = join(root, ".capture/paste");
 
-const args = process.argv.slice(2)
-const only = args.reduce((acc, a, i) => (a === '--only' && args[i + 1] ? [...acc, args[i + 1]] : acc), [])
-const tabLabel = args[args.indexOf('--tab') + 1] === 'jsGsap' ? 'JS + GSAP' : 'JS'
-const keep = args.includes('--keep')
+const args = process.argv.slice(2);
+const only = args.reduce(
+  (acc, a, i) => (a === "--only" && args[i + 1] ? [...acc, args[i + 1]] : acc),
+  [],
+);
+const tabArg = args.includes("--tab") ? args[args.indexOf("--tab") + 1] : null;
+// Both by default: the zero-dependency tab and the GSAP tab make the same
+// promise, so verifying only one of them leaves half the claim untested.
+const tabs =
+  tabArg === "jsGsap"
+    ? ["JS + GSAP"]
+    : tabArg === "js"
+      ? ["JS"]
+      : ["JS", "JS + GSAP"];
+const keep = args.includes("--keep");
 
-/** Splits the emitted snippet back into the three blocks it advertises. */
+/**
+ * Splits the snippet on its own numbered headers rather than on fixed block
+ * positions, since the GSAP tab carries an import map the vanilla tab has no
+ * need for, and the numbering shifts with it.
+ */
 function splitBlocks(code) {
-  const markup = code.match(/<!-- 1\. Markup -->\n([\s\S]*?)(?=\n\n\/\* \d\. CSS \*\/|\n\n\/\/ \d\. JS)/)
-  const css = code.match(/\/\* \d\. CSS \*\/\n([\s\S]*?)(?=\n\n\/\/ \d\. JS)/)
-  const js = code.match(/\/\/ \d\. JS\n([\s\S]*)$/)
-  if (!markup || !js) throw new Error('snippet did not contain the advertised blocks')
-  return { markup: markup[1].trim(), css: css ? css[1].trim() : '', js: js[1].trim() }
+  const header =
+    /^(?:<!-- (\d+)\. (.*?) -->|\/\* (\d+)\. (.*?) \*\/|\/\/ (\d+)\. (.*?))$/gm;
+  const found = [];
+  for (const m of code.matchAll(header)) {
+    const kind = m[1] ? "html" : m[3] ? "css" : "js";
+    found.push({
+      kind,
+      title: m[2] ?? m[4] ?? m[6],
+      start: m.index,
+      bodyStart: m.index + m[0].length,
+    });
+  }
+  if (found.length === 0) throw new Error("snippet carried no numbered blocks");
+  return found.map((b, i) => ({
+    kind: b.kind,
+    title: b.title,
+    body: code
+      .slice(b.bodyStart, i + 1 < found.length ? found[i + 1].start : undefined)
+      .trim(),
+  }));
 }
 
-/** A blank HTML file. Nothing here but the three pasted blocks. */
-function pasteInto({ markup, css, js }) {
+/**
+ * A blank HTML file. Nothing in it but the pasted blocks, each put where its
+ * own header says it goes.
+ */
+function pasteInto(blocks) {
+  const css = blocks.filter((b) => b.kind === "css").map((b) => b.body);
+  const html = blocks.filter((b) => b.kind === "html");
+  const importMaps = html.filter((b) => b.body.includes('type="importmap"'));
+  const markup = html.filter((b) => !importMaps.includes(b)).map((b) => b.body);
+  const js = blocks.filter((b) => b.kind === "js");
+  // An import map only applies to module scripts, and must precede them.
+  const moduleScript =
+    importMaps.length > 0 || js.some((b) => /^\s*import\s/m.test(b.body));
   return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>paste test</title>
+${importMaps.map((b) => b.body).join("\n")}
     <style>
       body { background: #111; color: #eee; display: grid; place-items: center; min-height: 100vh; margin: 0; }
       svg { width: 240px; height: auto; }
-${css ? `\n${css}\n` : ''}    </style>
+${css.length ? `\n${css.join("\n")}\n` : ""}    </style>
   </head>
   <body>
-${markup}
-    <script>
-${js}
+${markup.join("\n")}
+    <script${moduleScript ? ' type="module"' : ""}>
+${js.map((b) => b.body).join("\n")}
     </script>
   </body>
 </html>
-`
+`;
 }
 
 async function main() {
-  const catalog = (await readCatalog(animationsDir)).filter((e) => only.length === 0 || only.includes(e.id))
-  await rm(outDir, { recursive: true, force: true })
-  await mkdir(outDir, { recursive: true })
+  const catalog = (await readCatalog(animationsDir)).filter(
+    (e) => only.length === 0 || only.includes(e.id),
+  );
+  await rm(outDir, { recursive: true, force: true });
+  await mkdir(outDir, { recursive: true });
 
-  const server = await createServer({ root, logLevel: 'warn' })
-  await server.listen()
-  const base = server.resolvedUrls.local[0]
-  const browser = await chromium.launch()
+  const server = await createServer({ root, logLevel: "warn" });
+  await server.listen();
+  const base = server.resolvedUrls.local[0];
+  const browser = await chromium.launch();
 
-  const results = []
+  const results = [];
 
-  for (const entry of catalog) {
-    // 1. Read the snippet the Copy button would hand over.
-    const reader = await browser.newContext({ reducedMotion: 'no-preference' })
-    const page = await reader.newPage()
-    await page.goto(`${base}a/${entry.id}`, { waitUntil: 'load' })
-    await page.waitForSelector('.detail-title')
-    await page.getByRole('tab', { name: tabLabel, exact: true }).click()
-    const code = await page.locator('.code-pre code').innerText()
-    await reader.close()
+  for (const tabLabel of tabs) {
+    console.log(`\n${tabLabel}`);
+    for (const entry of catalog) {
+      // 1. Read the snippet the Copy button would hand over.
+      const reader = await browser.newContext({
+        reducedMotion: "no-preference",
+      });
+      const page = await reader.newPage();
+      await page.goto(`${base}a/${entry.id}`, { waitUntil: "load" });
+      await page.waitForSelector(".detail-title");
+      await page.getByRole("tab", { name: tabLabel, exact: true }).click();
+      const code = await page.locator(".code-pre code").innerText();
+      await reader.close();
 
-    const blocks = splitBlocks(code)
-    const file = join(outDir, entry.id, 'index.html')
-    await mkdir(dirname(file), { recursive: true })
-    await writeFile(file, pasteInto(blocks))
+      const blocks = splitBlocks(code);
+      const file = join(
+        outDir,
+        tabLabel.replace(/\W+/g, "-").toLowerCase(),
+        entry.id,
+        "index.html",
+      );
+      await mkdir(dirname(file), { recursive: true });
+      await writeFile(file, pasteInto(blocks));
 
-    // 2. Open that file on its own. No dev server, no bundler, no imports.
-    const context = await browser.newContext({ reducedMotion: 'no-preference' })
-    const pasted = await context.newPage()
-    const errors = []
-    pasted.on('pageerror', (e) => errors.push(e.message))
-    pasted.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
-    await pasted.goto(`file://${file}`, { waitUntil: 'load' })
-    await pasted.waitForTimeout(150)
+      // 2. Open that file on its own. No dev server, no bundler, no packages.
+      const context = await browser.newContext({
+        reducedMotion: "no-preference",
+      });
 
-    const check = await pasted.evaluate(() => {
-      const svg = document.querySelector('svg')
-      if (!svg) return { ok: false, why: 'no svg in the document' }
-      const animated = [...svg.querySelectorAll('*')].flatMap((el) =>
-        el.getAnimations().map((a) => ({ a, el })),
-      )
-      if (animated.length === 0) return { ok: false, why: 'the pasted JS created no animation' }
+      // Record the rendered state every frame, from the first frame onwards.
+      // GSAP doesn't use the Web Animations API — it writes inline styles from
+      // its own ticker — so getAnimations() is blind to half of what ships
+      // here. Watching computed style instead is the one check that sees both
+      // engines, and it is the visual state CLAUDE.md asks to assert on.
+      await context.addInitScript(() => {
+        window.__frames = [];
+        const sample = () => {
+          const els = [...document.querySelectorAll("svg *")];
+          if (els.length) {
+            const cs = els.map((el) => {
+              const s = getComputedStyle(el);
+              // Geometry attributes matter as much as style here: a clip wipe
+              // moves a rect's width, which no computed style on the artwork
+              // reflects. Sampling style alone let clip-wipe pass on nothing
+              // more than the <defs> appearing.
+              const attrs = [
+                "width",
+                "height",
+                "x",
+                "y",
+                "r",
+                "d",
+                "clip-path",
+              ].map((a) => el.getAttribute(a) ?? "");
+              return [
+                s.transform,
+                s.opacity,
+                s.strokeDashoffset,
+                s.strokeDasharray,
+                ...attrs,
+              ].join("|");
+            });
+            window.__frames.push(cs.join(" "));
+          }
+          if (window.__frames.length < 600) requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      });
 
-      // Scrubbed rather than watched: whether the compositor advances a
-      // timeline is a property of the window this runs in, but whether the
-      // animation interpolates is a property of the snippet.
-      //
-      // Every animation is scrubbed together across one shared span, because
-      // a snippet may stack several fill:'both' animations on one element —
-      // move only one of them and the others simply overwrite what it did.
-      const span = Math.max(
-        ...animated.map(({ a }) => {
-          const t = a.effect.getTiming()
-          return Number(t.delay || 0) + Number(t.duration || 0)
-        }),
-      )
-      animated.forEach(({ a }) => a.pause())
-      const elements = [...new Set(animated.map(({ el }) => el))]
-      const frames = [0, 0.5, 1].map((f) => {
-        animated.forEach(({ a }) => {
-          a.currentTime = span * f
-        })
-        return elements
-          .map((el) => {
-            const cs = getComputedStyle(el)
-            return [cs.transform, cs.opacity, cs.strokeDashoffset].join('|')
-          })
-          .join(' ')
-      })
-      return { ok: true, frames, animations: animated.length, elements: elements.length, span }
-    })
+      const pasted = await context.newPage();
+      const errors = [];
+      pasted.on("pageerror", (e) => errors.push(e.message));
+      pasted.on(
+        "console",
+        (m) => m.type() === "error" && errors.push(m.text()),
+      );
+      await pasted.goto(`file://${file}`, { waitUntil: "load" });
+      // Give it room to run: a module script fetches GSAP from the CDN first.
+      await pasted.waitForTimeout(3000);
 
-    // Does it also run on its own, unscrubbed?
-    const advanced = await pasted.evaluate(async () => {
-      const svg = document.querySelector('svg')
-      const a = [...svg.querySelectorAll('*')].flatMap((el) => el.getAnimations())[0]
-      if (!a) return null
-      a.cancel()
-      a.play()
-      const before = Number(a.currentTime ?? 0)
-      await new Promise((r) => setTimeout(r, 400))
-      return Math.round(Number(a.currentTime ?? 0) - before)
-    })
+      const check = await pasted.evaluate(() => {
+        const svg = document.querySelector("svg");
+        if (!svg) return { ok: false, why: "no svg in the document" };
+        const frames = window.__frames ?? [];
+        if (frames.length < 2)
+          return {
+            ok: false,
+            why: `only ${frames.length} rendered frames — the animation clock is frozen, so nothing here is measurable`,
+          };
+        const distinct = new Set(frames).size;
+        if (distinct < 2)
+          return {
+            ok: false,
+            why: "the pasted code never changed the rendered state",
+          };
+        const settled = frames[frames.length - 1] === frames[frames.length - 2];
+        return { ok: true, frames: frames.length, distinct, settled };
+      });
 
-    await context.close()
+      await context.close();
 
-    const distinct = check.ok ? new Set(check.frames).size : 0
-    const pass = check.ok && errors.length === 0 && distinct > 1
-    results.push({ id: entry.id, pass, errors, check, advanced })
-    console.log(
-      `  ${pass ? 'PASS' : 'FAIL'}  ${entry.id.padEnd(20)} ${
-        check.ok ? `${check.animations} anim / ${check.elements} el, ${check.span}ms, ${distinct} distinct frames` : check.why
-      }${errors.length ? `  errors: ${errors.join('; ')}` : ''}`,
-    )
-    if (advanced !== null) console.log(`        unscrubbed: advanced ${advanced}ms in 400ms of wall clock`)
+      const pass = check.ok && errors.length === 0;
+      results.push({ id: entry.id, tab: tabLabel, pass, errors, check });
+      console.log(
+        `  ${pass ? "PASS" : "FAIL"}  ${entry.id.padEnd(20)} ${
+          check.ok
+            ? `${check.frames} frames, ${check.distinct} distinct states, ${check.settled ? "settled" : "still moving"}`
+            : check.why
+        }${errors.length ? `  errors: ${errors.join("; ")}` : ""}`,
+      );
+    }
   }
 
-  await browser.close()
-  await server.close()
-  if (!keep) await rm(outDir, { recursive: true, force: true })
+  await browser.close();
+  await server.close();
+  if (!keep) await rm(outDir, { recursive: true, force: true });
 
-  const failed = results.filter((r) => !r.pass)
-  console.log(`\n${results.length - failed.length}/${results.length} pasted and ran`)
-  if (failed.length) process.exit(1)
+  const failed = results.filter((r) => !r.pass);
+  console.log(
+    `\n${results.length - failed.length}/${results.length} pasted and ran`,
+  );
+  failed.forEach((f) => console.log(`  FAILED: ${f.tab} / ${f.id}`));
+  if (failed.length) process.exit(1);
 }
 
 main().catch((err) => {
-  console.error(`\n${err.message}`)
-  process.exit(1)
-})
+  console.error(`\n${err.message}`);
+  process.exit(1);
+});

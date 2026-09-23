@@ -84,18 +84,48 @@ export function markupBlock(module: AnimationModule, demo: Demo): string {
   return demoSvg(demo, className(module))
 }
 
+interface Block {
+  kind: 'html' | 'css' | 'js'
+  title: string
+  body: string
+}
+
 /**
- * The three blocks, headed by comments in each block's own language so the
- * whole thing survives being pasted into one file and still reads as three
- * parts. The JS ends with the call that runs it — without that the snippet
- * defines a function nobody invokes, which is the difference between "this
- * runs when pasted" and "this compiles when pasted".
+ * The blocks, numbered in paste order and headed by a comment in each one's
+ * own language, so the whole thing survives being pasted into a single file
+ * and still reads as separate parts. The JS ends with the call that runs it —
+ * without that the snippet defines a function nobody invokes, which is the
+ * difference between "this runs when pasted" and "this compiles when pasted".
  */
-function assemble(module: AnimationModule, demo: Demo, js: string, css?: string): string {
-  const blocks = [`<!-- 1. Markup -->\n${markupBlock(module, demo)}`]
-  if (css?.trim()) blocks.push(`/* 2. CSS */\n${css.trim()}`)
-  blocks.push(`${css?.trim() ? '// 3. JS' : '// 2. JS'}\n${js.trim()}`)
-  return `${blocks.join('\n\n')}\n`
+function assemble(blocks: Block[]): string {
+  return `${blocks
+    .map((b, i) => {
+      const n = i + 1
+      const head =
+        b.kind === 'html' ? `<!-- ${n}. ${b.title} -->` : b.kind === 'css' ? `/* ${n}. ${b.title} */` : `// ${n}. ${b.title}`
+      return `${head}\n${b.body.trim()}`
+    })
+    .join('\n\n')}\n`
+}
+
+const CDN = 'https://cdn.jsdelivr.net/npm/gsap@3'
+
+/**
+ * GSAP's snippet keeps its bare `import gsap from 'gsap'` rather than
+ * switching to the UMD global, because that is the line a reader will
+ * actually ship — moving the snippet into a project with GSAP installed then
+ * means deleting this block and nothing else. In a blank file the import map
+ * is what makes those specifiers resolve, so the snippet runs as pasted
+ * either way.
+ *
+ * Plugins need an entry each: the package exposes them as `gsap/ScrollTrigger`
+ * but the file on the CDN is `ScrollTrigger.js`, so a trailing-slash prefix
+ * mapping would resolve to a path that doesn't exist.
+ */
+function importMap(plugins: string[]): string {
+  const imports: Record<string, string> = { gsap: `${CDN}/+esm` }
+  for (const p of plugins) imports[`gsap/${p}`] = `${CDN}/${p}.js/+esm`
+  return `<script type="importmap">\n${JSON.stringify({ imports }, null, 2)}\n</script>`
 }
 
 function runner(module: AnimationModule): string {
@@ -121,7 +151,15 @@ function ${fnName}(svg) {
 ${reducedMotionCode}${body}
 }${helpersFor(source)}
 ${runner(module)}`
-  return assemble(module, demoById(demoId), js, css)
+  const blocks: Block[] = [{ kind: 'html', title: 'Markup', body: markupBlock(module, demoById(demoId)) }]
+  if (css?.trim()) blocks.push({ kind: 'css', title: 'CSS', body: css })
+  blocks.push({
+    kind: 'html',
+    title: 'Load GSAP — delete this block if GSAP is already installed',
+    body: importMap(module.plugins),
+  })
+  blocks.push({ kind: 'js', title: 'JS — put this in <script type="module">', body: js })
+  return assemble(blocks)
 }
 
 /**
@@ -153,7 +191,10 @@ export function emitVanillaJS(
 ${reducedMotionCode}${body}
 }${helpersFor(vanillaSource)}
 ${runner(module)}`
-  return assemble(module, demoById(demoId), js, css)
+  const blocks: Block[] = [{ kind: 'html', title: 'Markup', body: markupBlock(module, demoById(demoId)) }]
+  if (css?.trim()) blocks.push({ kind: 'css', title: 'CSS', body: css })
+  blocks.push({ kind: 'js', title: 'JS', body: js })
+  return assemble(blocks)
 }
 
 /** Markup only, for a reader who already has the behaviour wired up. */
