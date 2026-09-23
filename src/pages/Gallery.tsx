@@ -44,6 +44,11 @@ export default function Gallery() {
     (e) => selectedCategories.length === 0 || selectedCategories.includes(e.module.category),
   )
 
+  // The union of what the visible cards support: a shape no card can render
+  // is offered by nothing on screen, so it is disabled rather than silently
+  // falling back on every card at once.
+  const supportedDemos = useMemo(() => [...new Set(filtered.flatMap((e) => e.module.demos))], [filtered])
+
   const hasActiveFilters = search.length > 0 || selectedCategories.length > 0
 
   const clearFilters = () => {
@@ -102,7 +107,7 @@ export default function Gallery() {
         </div>
       </header>
 
-      <DemoPicker value={demo} onChange={setDemo} />
+      <DemoPicker value={demo} onChange={setDemo} supported={supportedDemos} />
 
       <FilterBar
         search={search}

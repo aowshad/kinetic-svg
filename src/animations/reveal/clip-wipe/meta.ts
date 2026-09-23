@@ -7,7 +7,7 @@ const clipWipe: AnimationModule = {
   name: 'Clip Wipe',
   category: 'reveal',
   trigger: 'play',
-  demos: ['mark', 'check', 'menu'],
+  demos: ['mark', 'wave', 'signature', 'chart', 'blob', 'check', 'menu', 'play'],
   tags: ['clip', 'reveal'],
   blurb: 'A clip rectangle sweeps across, uncovering the artwork left to right. The clip is built in JS, so the markup stays plain art.',
   defaults: { duration: 0.8, stagger: 0, delay: 0, ease: 'power2.out' },

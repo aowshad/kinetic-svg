@@ -208,7 +208,7 @@ function DetailView({
           )}
         </div>
 
-        <DemoPicker value={demo} onChange={setDemo} />
+        <DemoPicker value={demoId} onChange={setDemo} supported={module.demos} />
 
         <ControlPanel
           align={align}

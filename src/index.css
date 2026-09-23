@@ -1741,3 +1741,13 @@ pre,
 .site-footer-meta a:hover {
   color: var(--text);
 }
+
+.demo-chip:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+}
+
+.demo-chip:disabled:hover {
+  border-color: var(--border);
+  color: var(--muted);
+}
