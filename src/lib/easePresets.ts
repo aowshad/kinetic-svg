@@ -1,0 +1,16 @@
+export const EASE_PRESETS = [
+  'none',
+  'power1.out',
+  'power1.inOut',
+  'power2.out',
+  'power2.inOut',
+  'power3.out',
+  'power3.inOut',
+  'power4.out',
+  'expo.out',
+  'circ.out',
+  'back.out(1.7)',
+  'back.out(2)',
+  'elastic.out(1, 0.3)',
+  'bounce.out',
+] as const

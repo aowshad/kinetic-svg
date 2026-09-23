@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kinetic SVG — SVG animations, with or without GSAP</title>
+    <meta
+      name="description"
+      content="Copy-paste SVG animations with live previews. Each one emits markup, CSS and JS together, and says plainly whether it needs GSAP."
+    />
+    <meta name="theme-color" content="#0a0a0b" />
+    <link rel="canonical" href="https://aowshad.github.io/kinetic-svg/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Kinetic SVG — SVG animations, with or without GSAP" />
+    <meta
+      property="og:description"
+      content="Copy-paste SVG animations with live previews. Each one emits markup, CSS and JS together, and says plainly whether it needs GSAP."
+    />
+    <meta property="og:url" content="https://aowshad.github.io/kinetic-svg/" />
+    <meta property="og:site_name" content="Kinetic" />
+    
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Kinetic SVG — SVG animations, with or without GSAP" />
+    <meta
+      name="twitter:description"
+      content="Copy-paste SVG animations with live previews. Each one emits markup, CSS and JS together, and says plainly whether it needs GSAP."
+    />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('kinetic-svg-theme')
+          var theme =
+            saved === 'light' || saved === 'dark'
+              ? saved
+              : window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark'
+          document.documentElement.setAttribute('data-theme', theme)
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
