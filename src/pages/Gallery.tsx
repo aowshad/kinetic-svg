@@ -5,23 +5,15 @@ import catalog from '../animations/registry'
 import AnimationCard from '../components/AnimationCard'
 import FilterBar from '../components/FilterBar'
 import DemoPicker from '../components/DemoPicker'
-import ThemeControl from '../components/ThemeControl'
 import { useDemo } from '../lib/useDemo'
 import { SITE_DESCRIPTION, SITE_TITLE, useDocumentMeta } from '../lib/useDocumentMeta'
 import { usePreviewEngine } from '../lib/usePreviewEngine'
 import type { Category } from '../lib/types'
-import type { ThemeMode } from '../lib/useTheme'
 
 const CATEGORY_ORDER: Category[] = ['draw', 'transform', 'reveal', 'morph', 'data', 'scroll-hover']
 const GSAP_VERSION = (pkg.dependencies.gsap as string).replace(/^[^0-9]*/, '')
 
-export default function Gallery({
-  theme,
-  onThemeToggle,
-}: {
-  theme: ThemeMode
-  onThemeToggle: (m: ThemeMode) => void
-}) {
+export default function Gallery() {
   const [demo, setDemo] = useDemo()
   const [engine, setEngine] = usePreviewEngine()
   const [search, setSearch] = useState('')
@@ -93,9 +85,6 @@ export default function Gallery({
               on older browsers. We tell you which is which.
             </p>
           </div>
-          <div className="page-header-controls">
-            <ThemeControl mode={theme} onChange={onThemeToggle} />
-          </div>
         </div>
         <div className="page-header-badges">
           <button type="button" onClick={copyInstall} className="badge-btn">
@@ -160,15 +149,6 @@ export default function Gallery({
         )}
       </main>
 
-      <footer className="page-footer">
-        <span>MIT licence</span>
-        <a href="https://github.com/aowshad/kinetic-svg" target="_blank" rel="noreferrer">
-          Contribute
-        </a>
-        <a href="https://gsap.com" target="_blank" rel="noreferrer">
-          Built with GSAP
-        </a>
-      </footer>
     </div>
   )
 }

@@ -1600,3 +1600,144 @@ pre,
   font-size: 12px;
   color: var(--muted);
 }
+
+/* ---------- cross-section top bar ---------- */
+/* Identical stylesheet block in both sections. Keep them in sync by hand. */
+
+.topbar {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-block-end: 1px solid var(--border);
+}
+
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  max-inline-size: 1100px;
+  margin-inline: auto;
+  padding: 0 24px;
+  block-size: 52px;
+}
+
+.topbar-mark {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--text);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.topbar-sections {
+  display: flex;
+  gap: 4px;
+  margin-inline-end: auto;
+}
+
+.topbar-section {
+  display: inline-flex;
+  align-items: center;
+  block-size: 51px;
+  padding-inline: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+  border-block-end: 2px solid transparent;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.topbar-section:hover {
+  color: var(--text);
+}
+
+.topbar-section[aria-current='page'] {
+  color: var(--text);
+  border-block-end-color: var(--accent);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.topbar-github {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.topbar-github:hover {
+  color: var(--text);
+}
+
+@media (max-width: 560px) {
+  .topbar-inner {
+    gap: 12px;
+    padding: 0 16px;
+  }
+
+  .topbar-github {
+    display: none;
+  }
+
+  .topbar-section {
+    padding-inline: 8px;
+  }
+}
+
+/* ---------- cross-section footer ---------- */
+
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  max-inline-size: 1100px;
+  margin: 48px auto 0;
+  padding: 24px;
+  border-block-start: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.site-footer-other {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.site-footer-other span {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.site-footer-other:hover {
+  color: var(--accent);
+}
+
+.site-footer-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.site-footer-meta a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.site-footer-meta a:hover {
+  color: var(--text);
+}
