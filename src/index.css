@@ -1751,3 +1751,10 @@ pre,
   border-color: var(--border);
   color: var(--muted);
 }
+
+/* A 26px thumbnail can't carry the stage's constant screen-pixel stroke — at
+   that size an 8px line swamps the drawing — so the picker lets strokes
+   scale with the thumbnail. CSS outranks the presentation attribute. */
+.demo-chip svg * {
+  vector-effect: none;
+}

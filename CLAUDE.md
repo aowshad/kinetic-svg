@@ -67,7 +67,13 @@ this was checked.
 
 Every animation's style.css is applied to the site as well as emitted, so a
 preview runs under the same CSS its snippet ships with. When they differed,
-the site looked right while the pasted snippet was broken.
+the site looked right while the pasted snippet was broken. paste-test.mjs now
+fails if any style.css selector or keyframes is missing from the live page.
+
+Stroke weight belongs to the artwork, not to an animation: every stroked line
+in src/demos carries vector-effect="non-scaling-stroke" itself, so a drawing
+renders at one weight whichever animation it is handed to. Don't reintroduce
+it per animation in a style.css.
 
 Check these by eye — screenshot the settled end state and a mid-point — not
 only by assertion. A paste test that measures motion passes a hamburger that

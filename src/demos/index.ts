@@ -10,8 +10,11 @@
  * a problem inherited by everyone who pastes it.
  *
  * `stroke` and `fill` are always `currentColor` so one drawing serves both
- * themes, and stroked art carries `vector-effect: non-scaling-stroke` (see
- * each animation's style.css) so weight doesn't change with card width.
+ * themes. Every stroked line carries `vector-effect="non-scaling-stroke"` in
+ * the artwork itself, so a drawing renders at the same weight whichever
+ * animation it is handed to and whatever size its stage is. Play is the
+ * exception on purpose: its stroke only rounds the corners of a filled
+ * triangle, so it is part of the silhouette and has to scale with it.
  */
 export interface Demo {
   id: string
@@ -28,16 +31,17 @@ export interface Demo {
   stroked?: boolean
 }
 
-const STROKE = 'fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"'
+const STROKE =
+  'fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"'
 
 const mark: Demo = {
   id: 'mark',
   name: 'Mark',
   viewBox: '0 0 120 120',
   stroked: true,
-  markup: `  <circle cx="60" cy="60" r="34" fill="none" stroke="currentColor" stroke-width="8" />
-  <line x1="60" y1="12" x2="60" y2="38" stroke="currentColor" stroke-width="8" stroke-linecap="round" />
-  <line x1="60" y1="82" x2="60" y2="108" stroke="currentColor" stroke-width="8" stroke-linecap="round" />
+  markup: `  <circle cx="60" cy="60" r="34" fill="none" stroke="currentColor" stroke-width="8" vector-effect="non-scaling-stroke" />
+  <line x1="60" y1="12" x2="60" y2="38" stroke="currentColor" stroke-width="8" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+  <line x1="60" y1="82" x2="60" y2="108" stroke="currentColor" stroke-width="8" stroke-linecap="round" vector-effect="non-scaling-stroke" />
   <circle cx="60" cy="60" r="10" fill="currentColor" />`,
 }
 
@@ -56,7 +60,8 @@ const signature: Demo = {
   stroked: true,
   markup: `  <path d="M14 80 C 26 46, 36 38, 42 54 C 48 70, 39 88, 46 92 C 54 96, 66 66, 74 50
            C 80 38, 90 42, 87 56 C 84 70, 73 76, 84 79 C 93 81, 101 71, 110 56"
-        fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />`,
+        fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+        vector-effect="non-scaling-stroke" />`,
 }
 
 const chart: Demo = {
@@ -66,7 +71,8 @@ const chart: Demo = {
   title: 'Line chart rising from left to right across eight points',
   stroked: true,
   markup: `  <polyline points="12,92 26,74 40,80 54,54 68,62 82,36 96,44 110,18"
-            fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />`,
+            fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+            vector-effect="non-scaling-stroke" />`,
 }
 
 const blob: Demo = {
@@ -83,7 +89,7 @@ const check: Demo = {
   viewBox: '0 0 120 120',
   stroked: true,
   markup: `  <path d="M24 62 L50 88 L96 34" fill="none" stroke="currentColor" stroke-width="10"
-        stroke-linecap="round" stroke-linejoin="round" />`,
+        stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />`,
 }
 
 const menu: Demo = {

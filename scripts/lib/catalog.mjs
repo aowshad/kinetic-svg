@@ -33,6 +33,8 @@ export async function readCatalog(animationsDir) {
         id: pick('id') ?? id,
         name: pick('name') ?? id,
         category: pick('category') ?? category,
+        trigger: pick('trigger') ?? 'play',
+        vanilla: pick('vanilla') ?? 'full',
         role: src.match(/roles:\s*\['([^']*)'/)?.[1] ?? 'heading',
         duration: num('duration'),
         stagger: num('stagger'),
