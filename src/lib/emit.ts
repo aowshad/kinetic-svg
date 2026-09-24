@@ -1,6 +1,6 @@
 import type { AnimationModule, AnimationOptions } from './types'
 import { LINEAR_EASE_MAP, EASE_POINTS } from './linearEases'
-import { EASE_AT_SOURCE, PATHS_SOURCE } from './inlineHelpers'
+import { CAP_PAD_SOURCE, EASE_AT_SOURCE, PATHS_SOURCE, STROKE_LENGTH_SOURCE } from './inlineHelpers'
 import { demoById, demoSvg, type Demo } from '../demos'
 
 /**
@@ -136,6 +136,8 @@ function runner(module: AnimationModule): string {
 function helpersFor(source: string): string {
   const helpers = []
   if (source.includes('paths(')) helpers.push(PATHS_SOURCE)
+  if (source.includes('strokeLength(')) helpers.push(STROKE_LENGTH_SOURCE)
+  if (source.includes('capPad(')) helpers.push(CAP_PAD_SOURCE)
   if (source.includes('easeAt(')) helpers.push(EASE_AT_SOURCE)
   return helpers.map((h) => `\n\n${h}`).join('')
 }

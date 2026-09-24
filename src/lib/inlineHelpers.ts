@@ -16,6 +16,17 @@ export const PATHS_SOURCE = `function paths(svg) {
   )
 }`
 
+export const STROKE_LENGTH_SOURCE = `function strokeLength(el) {
+  const m = el.getScreenCTM()
+  const nonScaling = getComputedStyle(el).vectorEffect === 'non-scaling-stroke'
+  return el.getTotalLength() * (nonScaling && m ? Math.hypot(m.a, m.b) : 1)
+}`
+
+export const CAP_PAD_SOURCE = `function capPad(el) {
+  const s = getComputedStyle(el)
+  return s.strokeLinecap === 'butt' ? 0 : (parseFloat(s.strokeWidth) || 0) / 2 + 1
+}`
+
 export const EASE_AT_SOURCE = `function easeAt(points, t) {
   const clamped = t < 0 ? 0 : t > 1 ? 1 : t
   const scaled = clamped * (points.length - 1)

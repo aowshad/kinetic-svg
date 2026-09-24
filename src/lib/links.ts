@@ -23,7 +23,7 @@ export interface Section {
 
 export const SECTIONS: Section[] = [
   { id: 'text', name: 'Text', url: 'https://aowshad.github.io/kinetic/', count: 45 },
-  { id: 'svg', name: 'SVG', url: 'https://aowshad.github.io/kinetic-svg/', count: 3 },
+  { id: 'svg', name: 'SVG', url: 'https://aowshad.github.io/kinetic-svg/', count: 16 },
 ]
 
 export const CURRENT_SECTION = 'svg'
