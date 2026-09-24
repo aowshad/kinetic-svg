@@ -18,6 +18,9 @@ export const run: AnimationImpl = (svg, o, onComplete) => {
   // Scaled rather than resized: x/y/width/height only became animatable CSS
   // properties in Safari 16.4, while a transform on a clip path's contents
   // has always worked, and the wipe is indistinguishable either way.
+  // fill-box makes "left" the rect's own left edge. Without it "left" is the
+  // viewBox's, which only coincides while the viewBox happens to start at 0.
+  rect.style.transformBox = 'fill-box'
   rect.style.transformOrigin = 'left'
   clip.appendChild(rect)
   defs.appendChild(clip)

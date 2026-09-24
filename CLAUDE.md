@@ -37,3 +37,38 @@ animation's JS removed, and require the real run to beat it.
 
 If a verification approach cannot cover some subset, say so explicitly in the
 report. Never silently exclude and never downgrade "untestable here" to "fine".
+
+## SVG transforms and strokes
+
+Transform origins are the trap in this section, and the two engines need
+opposite things, so a rule that fixes one breaks the other:
+
+- WAAPI: set `transform-box: fill-box` and `transform-origin` inline, in the
+  JS, on every element it animates. Without fill-box an SVG origin resolves
+  against the canvas, and a bar meant to rotate about its own centre swings
+  around the SVG's top-left corner.
+- GSAP: use `transformOrigin: '50% 50%'` and never add `transform-box`. GSAP
+  resolves the origin against the element's own bounding box and bakes it
+  into the matrix it writes; fill-box on top moves what that matrix is
+  relative to, and the element lands off target.
+- So never put `transform-box` in a style.css the two engines share.
+
+WAAPI animations stacked on the same property of the same element overwrite
+each other, and a delayed one's backwards fill does so from the first frame.
+Sequence a multi-phase transform as one animation with keyframe offsets and a
+per-keyframe easing, not as several animations.
+
+Under `vector-effect: non-scaling-stroke` the dash pattern is measured in
+screen pixels, not user units, so a dash of `getTotalLength()` covers only
+part of the path. `pathLength` does not rescue it. Scale the length by the
+element's screen CTM, and clear the dash once drawn so a resize can't reopen
+a gap. Verified in Chromium only — Firefox and WebKit were not available when
+this was checked.
+
+Every animation's style.css is applied to the site as well as emitted, so a
+preview runs under the same CSS its snippet ships with. When they differed,
+the site looked right while the pasted snippet was broken.
+
+Check these by eye — screenshot the settled end state and a mid-point — not
+only by assertion. A paste test that measures motion passes a hamburger that
+ends as two disconnected strokes.

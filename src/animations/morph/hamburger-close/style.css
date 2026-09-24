@@ -1,7 +1,0 @@
-/* Without fill-box, a transform origin resolves against the whole SVG's
-   viewport rather than the bar's own box, and each bar rotates around the
-   canvas centre instead of its own. */
-.k-hamburger-close .bar {
-  transform-box: fill-box;
-  transform-origin: center;
-}
