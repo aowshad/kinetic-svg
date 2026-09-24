@@ -23,5 +23,17 @@ looks exactly like a bug in the code.
 Never assert on textContent to verify a visual animation. Assert on computed
 visual state: opacity, filter, clipPath, transform, visibility.
 
+When asserting that an animation ran, pick a property whose "never ran" value
+is impossible, not merely different from its final value. strokeDashoffset: 0
+is both "finished" and "never started"; strokeDasharray: none is only "never
+started". This is the same failure mode as the textContent assertion: a check
+that the animation can satisfy without doing anything. "The rendered state
+changed" fails the same way — splitting text into spans or appending clones
+changes the DOM whether or not the animation that follows works, which is how
+the text section's scroll-color-sweep GSAP tab once passed with its colour
+never moving. Setup is not motion. Where no single property qualifies, measure
+the never-ran baseline rather than guess it: run the same page with the
+animation's JS removed, and require the real run to beat it.
+
 If a verification approach cannot cover some subset, say so explicitly in the
 report. Never silently exclude and never downgrade "untestable here" to "fine".
