@@ -1632,35 +1632,9 @@ pre,
   flex-shrink: 0;
 }
 
-.topbar-sections {
-  display: flex;
-  gap: 4px;
-  margin-inline-end: auto;
-}
-
-.topbar-section {
-  display: inline-flex;
-  align-items: center;
-  block-size: 51px;
-  padding-inline: 10px;
-  font-size: 13px;
-  color: var(--muted);
-  text-decoration: none;
-  border-block-end: 2px solid transparent;
-  transition: color 150ms ease, border-color 150ms ease;
-}
-
-.topbar-section:hover {
-  color: var(--text);
-}
-
-.topbar-section[aria-current='page'] {
-  color: var(--text);
-  border-block-end-color: var(--accent);
-}
-
 .topbar-right {
   display: flex;
+  margin-inline-start: auto;
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
@@ -1686,13 +1660,9 @@ pre,
   .topbar-github {
     display: none;
   }
-
-  .topbar-section {
-    padding-inline: 8px;
-  }
 }
 
-/* ---------- cross-section footer ---------- */
+/* ---------- footer ---------- */
 
 .site-footer {
   display: flex;
@@ -1706,25 +1676,6 @@ pre,
   border-block-start: 1px solid var(--border);
   font-size: 13px;
   color: var(--muted);
-}
-
-.site-footer-other {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 8px;
-  color: var(--text);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.site-footer-other span {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 400;
-}
-
-.site-footer-other:hover {
-  color: var(--accent);
 }
 
 .site-footer-meta {
